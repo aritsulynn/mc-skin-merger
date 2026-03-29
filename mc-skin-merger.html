@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MC Skin Merger</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+:root{
+  --bg:#080808;--s1:#111;--s2:#181818;--bd:#252525;
+  --green:#5aff6e;--gdim:#2d5c35;--amber:#ffbb00;--red:#ff4455;
+  --cyan:#00ffff;--magenta:#ff00ff;
+  --txt:#e0e0e0;--dim:#555;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--txt);font-family:'VT323',monospace;font-size:19px;min-height:100vh;padding:28px 16px 56px;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,#0e0e0e 31px,#0e0e0e 32px),
+  repeating-linear-gradient(90deg,transparent,transparent 31px,#0e0e0e 31px,#0e0e0e 32px);}
+
+h1{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--green);text-align:center;margin-bottom:6px;text-shadow:0 0 24px #5aff6e66;}
+.sub{text-align:center;color:var(--dim);font-size:17px;margin-bottom:28px;}
+
+.workspace{max-width:820px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start;}
+.slot{background:var(--s1);border:2px solid var(--bd);border-radius:4px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.slot-label{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--amber);letter-spacing:1px;text-align:center;line-height:1.8;}
+.drop-zone{width:100%;min-height:100px;border:2px dashed var(--bd);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--s2);padding:10px;position:relative;transition:border-color .15s,background .15s;}
+.drop-zone:hover,.drop-zone.over{border-color:var(--green);background:#162016;}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.di{font-size:26px;margin-bottom:3px;}
+.dt{color:var(--dim);font-size:15px;text-align:center;line-height:1.4;}
+.preview{image-rendering:pixelated;width:96px;height:96px;border:2px solid var(--bd);display:none;}
+.preview.on{display:block;}
+.fname{font-size:13px;color:var(--green);text-align:center;word-break:break-all;display:none;}
+.fname.on{display:block;}
+.rm-btn{background:none;border:1px solid var(--red);color:var(--red);font-family:'VT323',monospace;font-size:15px;padding:1px 10px;cursor:pointer;border-radius:2px;display:none;}
+.rm-btn.on{display:block;}
+.rm-btn:hover{background:#ff445520;}
+.mid{display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:60px;color:var(--gdim);font-size:28px;}
+
+/* RESULT */
+.result-wrap{max-width:820px;margin:16px auto 0;background:var(--s1);border:2px solid var(--gdim);border-radius:4px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.result-label{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--green);letter-spacing:1px;}
+
+.placeholder{width:192px;height:192px;border:2px dashed #1e2e1e;display:flex;align-items:center;justify-content:center;border-radius:3px;}
+.placeholder span{color:#2a3a2a;font-size:14px;text-align:center;line-height:1.6;}
+
+/* BUTTONS */
+.merge-btn{max-width:820px;margin:14px auto 0;display:block;width:100%;padding:13px;font-family:'Press Start 2P',monospace;font-size:10px;background:var(--green);color:#000;border:none;border-radius:4px;cursor:pointer;transition:background .15s,transform .1s;letter-spacing:1px;}
+.merge-btn:hover:not(:disabled){background:#7affaa;transform:translateY(-1px);}
+.merge-btn:disabled{background:var(--bd);color:var(--dim);cursor:not-allowed;}
+
+.dl-row{max-width:820px;margin:8px auto 0;display:none;gap:8px;}
+.dl-row.on{display:flex;}
+.dl-btn{flex:1;padding:9px;font-family:'Press Start 2P',monospace;font-size:8px;background:transparent;border:2px solid var(--green);color:var(--green);border-radius:4px;cursor:pointer;text-align:center;text-decoration:none;transition:background .15s;}
+.dl-btn:hover{background:#5aff6e18;}
+canvas{display:none;}
+@media(max-width:580px){.workspace{grid-template-columns:1fr;}.mid{padding-top:0;flex-direction:row;}}
+</style>
+</head>
+<body>
+
+<h1>⛏ MC SKIN MERGER</h1>
+<p class="sub">Merge 2 skins at the body center</p>
+
+<div class="workspace">
+  <div class="slot">
+    <div class="slot-label">SKIN A<br>👈 LEFT<br>(right arm + right leg)</div>
+    <div class="drop-zone" id="dropA">
+      <input type="file" accept="image/png" id="fileA">
+      <div class="di">🧱</div>
+      <div class="dt">Skin A<br><small>PNG 64×64</small></div>
+    </div>
+    <img class="preview" id="prevA">
+    <div class="fname" id="nameA"></div>
+    <button class="rm-btn" id="rmA" onclick="removeSkin('A')">✕ Remove</button>
+  </div>
+  <div class="mid"><span>+</span></div>
+  <div class="slot">
+    <div class="slot-label">SKIN B<br>👉 RIGHT<br>(left arm + left leg)</div>
+    <div class="drop-zone" id="dropB">
+      <input type="file" accept="image/png" id="fileB">
+      <div class="di">🧱</div>
+      <div class="dt">Skin B<br><small>PNG 64×64</small></div>
+    </div>
+    <img class="preview" id="prevB">
+    <div class="fname" id="nameB"></div>
+    <button class="rm-btn" id="rmB" onclick="removeSkin('B')">✕ Remove</button>
+  </div>
+</div>
+
+<div class="result-wrap">
+  <div class="result-label">✦ MERGED RESULT ✦</div>
+  <div class="placeholder" id="placeholder"><span>Upload both skins<br>then press MERGE</span></div>
+  <img id="previewArea" class="preview" style="display:none;">
+  <div class="fname on" id="nameOut"></div>
+</div>
+
+<button class="merge-btn" id="mergeBtn" onclick="mergeSkins()" disabled>▶ MERGE SKINS</button>
+
+<div class="dl-row" id="dlRow">
+  <a class="dl-btn" id="dlClean" download="merged_skin.png">⬇ DOWNLOAD</a>
+</div>
+
+<canvas id="cA"></canvas><canvas id="cB"></canvas><canvas id="cOut"></canvas>
+
+<script>
+let imgA=null,imgB=null;
+
+// ── UV HELPERS ───────────────────────────────────────────────────
+function px(x,y){return(y*64+x)*4;}
+
+function copyRect(src,dst,x,y,w,h){
+  for(let r=0;r<h;r++) for(let c=0;c<w;c++){
+    const i=px(x+c,y+r), o=px(x+c,y+r);
+    dst[o]=src[i];dst[o+1]=src[i+1];dst[o+2]=src[i+2];dst[o+3]=src[i+3];
+  }
+}
+function splitFront(dA,dB,dO,x,y,w,h){
+  const half=Math.floor(w/2);
+  for(let r=0;r<h;r++) for(let c=0;c<w;c++){
+    const s=c<half?dA:dB, i=px(x+c,y+r), o=px(x+c,y+r);
+    dO[o]=s[i];dO[o+1]=s[i+1];dO[o+2]=s[i+2];dO[o+3]=s[i+3];
+  }
+}
+function splitBack(dA,dB,dO,x,y,w,h){
+  const half=Math.floor(w/2);
+  for(let r=0;r<h;r++) for(let c=0;c<w;c++){
+    const s=c<half?dB:dA, i=px(x+c,y+r), o=px(x+c,y+r);
+    dO[o]=s[i];dO[o+1]=s[i+1];dO[o+2]=s[i+2];dO[o+3]=s[i+3];
+  }
+}
+
+// ── MERGE ────────────────────────────────────────────────────────
+function mergeSkins(){
+  const cA=document.getElementById('cA'),cB=document.getElementById('cB'),cOut=document.getElementById('cOut');
+  [cA,cB,cOut].forEach(c=>{c.width=c.height=64;});
+  const ctxA=cA.getContext('2d'),ctxB=cB.getContext('2d'),ctxOut=cOut.getContext('2d');
+  ctxA.drawImage(imgA,0,0,64,64); ctxB.drawImage(imgB,0,0,64,64);
+  const dA=ctxA.getImageData(0,0,64,64).data;
+  const dB=ctxB.getImageData(0,0,64,64).data;
+  const iOut=ctxOut.createImageData(64,64);
+  const dO=iOut.data;
+  for(let i=0;i<dA.length;i++) dO[i]=dA[i]; // base = A
+
+  // HEAD
+  copyRect(dB,dO,16,8,8,8);
+  splitFront(dA,dB,dO,8,8,8,8);   splitBack(dA,dB,dO,24,8,8,8);
+  splitFront(dA,dB,dO,8,0,8,8);   splitBack(dA,dB,dO,16,0,8,8);
+  // HEAD OVERLAY
+  copyRect(dB,dO,48,8,8,8);
+  splitFront(dA,dB,dO,40,8,8,8);  splitBack(dA,dB,dO,56,8,8,8);
+  splitFront(dA,dB,dO,40,0,8,8);  splitBack(dA,dB,dO,48,0,8,8);
+  // LIMBS
+  copyRect(dB,dO,16,48,16,16); // L.Leg
+  copyRect(dB,dO,32,48,16,16); // L.Arm
+  // BODY
+  copyRect(dB,dO,28,20,4,12);
+  splitFront(dA,dB,dO,20,20,8,12); splitBack(dA,dB,dO,32,20,8,12);
+  splitFront(dA,dB,dO,20,16,8,4);  splitBack(dA,dB,dO,28,16,8,4);
+  // BODY OVERLAY
+  copyRect(dB,dO,28,36,4,12);
+  splitFront(dA,dB,dO,20,36,8,12); splitBack(dA,dB,dO,32,36,8,12);
+  splitFront(dA,dB,dO,20,32,8,4);  splitBack(dA,dB,dO,28,32,8,4);
+  // BOTTOM OVERLAYS
+  copyRect(dB,dO,0,48,16,16);
+  copyRect(dB,dO,48,48,16,16);
+
+  ctxOut.putImageData(iOut,0,0);
+
+  // Clean download
+  document.getElementById('dlClean').href = cOut.toDataURL('image/png');
+
+  // Show UI
+  document.getElementById('placeholder').style.display='none';
+  const preview = document.getElementById('previewArea');
+  preview.src = cOut.toDataURL('image/png');
+  preview.style.display = 'block';
+  preview.style.imageRendering = 'pixelated';
+  document.getElementById('nameOut').textContent='merged_skin.png';
+  document.getElementById('dlRow').classList.add('on');
+}
+
+// ── LOAD / REMOVE ────────────────────────────────────────────────
+function loadSkin(id,file){
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      if(id==='A') imgA=img; else imgB=img;
+      document.getElementById('prev'+id).src=e.target.result;
+      document.getElementById('prev'+id).classList.add('on');
+      document.getElementById('name'+id).textContent=file.name;
+      document.getElementById('name'+id).classList.add('on');
+      document.getElementById('drop'+id).style.display='none';
+      document.getElementById('rm'+id).classList.add('on');
+      checkReady();
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+function removeSkin(id){
+  if(id==='A') imgA=null; else imgB=null;
+  document.getElementById('prev'+id).classList.remove('on');
+  document.getElementById('name'+id).classList.remove('on');
+  document.getElementById('drop'+id).style.display='';
+  document.getElementById('rm'+id).classList.remove('on');
+  document.getElementById('file'+id).value='';
+  checkReady();
+}
+function checkReady(){
+  document.getElementById('mergeBtn').disabled=!(imgA&&imgB);
+}
+['A','B'].forEach(id=>{
+  document.getElementById('file'+id).addEventListener('change',e=>{if(e.target.files[0])loadSkin(id,e.target.files[0]);});
+  const dz=document.getElementById('drop'+id);
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+  dz.addEventListener('drop',e=>{
+    e.preventDefault();dz.classList.remove('over');
+    const f=e.dataTransfer.files[0];
+    if(f&&f.type==='image/png')loadSkin(id,f);
+  });
+});
+</script>
+</body>
+</html>

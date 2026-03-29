@@ -2,8 +2,13 @@
 
 A browser-based tool to merge two Minecraft skins at the body center.
 
+## Demo
+
 ![Demo Alex & Steve](img/demo_alexandsteve.png)
-![Demo Output](img/demo.png)
+
+Output:
+
+![Demo Output](img/demo_output.png)
 
 ## Live Version
 
